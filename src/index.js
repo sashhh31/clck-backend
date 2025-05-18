@@ -18,8 +18,7 @@ const app = express();
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
+  origin: '*'
 }));
 
 // Important: Webhook route must be registered before body parsing middleware
