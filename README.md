@@ -84,7 +84,7 @@ SMTP_USER=your-smtp-username
 SMTP_PASS=your-smtp-password
 
 # Frontend URL (for subscription success/cancel redirects)
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=${proccess.env.NEXT_PUBLIC_APP_URL}
 ```
 
 ## Installation
