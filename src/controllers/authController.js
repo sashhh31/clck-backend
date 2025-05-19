@@ -55,12 +55,8 @@ const register = async (req, res) => {
     }
 
     // Generate verification code
-    const verificationCode = generateVerificationCode();
-    const verificationExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    try {
       // Send verification email
-      await sendVerificationEmail(email, verificationCode);
 
       // Create Stripe customer
       const customer = await stripe.customers.create({
@@ -78,10 +74,8 @@ const register = async (req, res) => {
         lastName,
         email,
         password,
-        verificationCode,
-        verificationExpiry,
         twoFactorAuth: {
-          enabled: true
+          enabled: false
         },
         subscription: {
           stripeCustomerId: customer.id
@@ -94,18 +88,11 @@ const register = async (req, res) => {
       return res.status(201).json({
         status: 'success',
         message: 'Registration successful. Please check your email for verification code.',
-        requiresVerification: true,
+        requiresVerification: false,
         email: user.email,
-        redirectTo: '/verification'
+        redirectTo: '/plans'
       });
-    } catch (emailError) {
-      console.error('Email error:', emailError);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Failed to send verification email. Please try again later.',
-        details: emailError.message
-      });
-    }
+
   } catch (error) {
     console.error('Registration error:', error);
     return res.status(500).json({

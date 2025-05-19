@@ -6,7 +6,6 @@ const { getMe, uploadProfilePicture } = require('../controllers/userController')
 
 // Protected route - get current user
 router.get('/me', auth, getMe);
-console.log(auth)
 
 // Protected route - upload profile picture
 router.post('/me/profile-picture', auth, upload.single('profilePicture'), uploadProfilePicture);

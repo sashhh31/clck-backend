@@ -13,6 +13,7 @@ const adminRoutes = require('./routes/admin');
 const subscriptionRoutes = require('./routes/subscriptions');
 const meetingRoutes = require('./routes/meetingRoutes');
 const userRoutes = require('./routes/users');
+const stripeRoutes = require('./routes/stripe')
 const app = express();
 
 // Middleware
@@ -48,7 +49,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/users', userRoutes);
-
+app.use('/api/stripe',stripeRoutes)
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
