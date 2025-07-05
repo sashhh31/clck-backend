@@ -3,6 +3,7 @@ const User = require('../models/User');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const path = require('path');
 
 // Create email transporter
 const transporter = nodemailer.createTransport({
@@ -37,6 +38,27 @@ const sendVerificationEmail = async (email, code) => {
 const generateToken = (userId, role) => {
   return jwt.sign({ userId, role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
+  });
+};
+
+const sendPowerhourEmail = async (userEmail) => {
+  const calendlyLink = 'https://calendly.com/saswatpattanaik31/power-hour';
+  const logoUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/Images/logo.png`;
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; padding: 40px 0;">
+      <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 32px 24px; text-align: center;">
+        <img src="${logoUrl}" alt="Logo" style="height: 60px; margin-bottom: 24px;" />
+        <h2 style="color: #2A3356; margin-bottom: 12px;">Welcome to Powerhour!</h2>
+        <p style="color: #444; font-size: 16px; margin-bottom: 28px;">Thank you for joining us. To schedule your exclusive Powerhour session, simply click the button below and pick a time that works for you.</p>
+        <a href="${calendlyLink}" style="display: inline-block; background: #2A3356; color: #F0D687; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 8px; font-size: 18px; margin-bottom: 18px;">Book Your Powerhour</a>
+        <p style="color: #888; font-size: 13px; margin-top: 24px;">If you have any questions, just reply to this email.<br>We look forward to meeting you!</p>
+      </div>
+    </div>
+  `;
+  await transporter.sendMail({
+    to: userEmail,
+    subject: 'Schedule your Powerhour session',
+    html
   });
 };
 
@@ -85,6 +107,9 @@ const register = async (req, res) => {
       // Save user to database
       await user.save();
       
+      // After successful registration, send the Calendly email
+      await sendPowerhourEmail(user.email);
+
       return res.status(201).json({
         status: 'success',
         message: 'Registration successful. Please check your email for verification code.',
@@ -312,10 +337,55 @@ const changeEmail = async (req, res) => {
   }
 };
 
+// Forgot Password: send reset code to email
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    const resetCode = generateVerificationCode();
+    const resetExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    user.verificationCode = resetCode;
+    user.verificationExpiry = resetExpiry;
+    await user.save();
+    await sendVerificationEmail(email, resetCode);
+    return res.status(200).json({ status: 'success', message: 'Reset code sent to email.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({ status: 'error', message: 'Error sending reset code' });
+  }
+};
+
+// Reset Password: verify code and set new password
+const resetPassword = async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    if (user.verificationCode !== code || user.verificationExpiry < new Date()) {
+      return res.status(400).json({ status: 'error', message: 'Invalid or expired code' });
+    }
+    user.password = newPassword;
+    user.verificationCode = undefined;
+    user.verificationExpiry = undefined;
+    await user.save();
+    return res.status(200).json({ status: 'success', message: 'Password reset successful' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({ status: 'error', message: 'Error resetting password' });
+  }
+};
+
 module.exports = {
   register,
   login,
   verify2FA,
   changePassword,
-  changeEmail
+  changeEmail,
+  forgotPassword,
+  resetPassword,
 }; 

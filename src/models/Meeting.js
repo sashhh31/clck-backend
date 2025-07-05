@@ -19,6 +19,11 @@ const meetingSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  platform: {
+    type: String,
+    enum: ['calendly', 'zoom'],
+    default: 'calendly'
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

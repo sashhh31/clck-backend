@@ -6,13 +6,17 @@ const {
   login,
   verify2FA,
   changePassword,
-  changeEmail
+  changeEmail,
+  forgotPassword,
+  resetPassword
 } = require('../controllers/authController');
 
 // Public routes
 router.post('/register', register);
 router.post('/login', login);
 router.post('/verify-2fa', verify2FA);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // Protected routes
 router.put('/change-password', auth, changePassword);

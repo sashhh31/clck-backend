@@ -1,6 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { sendPowerhourEmail } = require('./authController');
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
@@ -212,6 +213,8 @@ const handleWebhook = async (req, res) => {
 
         await user.save();
         console.log('User subscription updated successfully');
+
+        await sendPowerhourEmail(user.email);
 
         return res.status(200).json({ received: true });
       } catch (error) {

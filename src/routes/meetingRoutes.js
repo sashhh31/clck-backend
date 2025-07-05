@@ -20,10 +20,6 @@ router.post('/', scheduleMeeting);
 // Get upcoming meetings
 router.get('/upcoming', getUpcomingMeetings);
 
-// Cal.com specific routes — put these BEFORE dynamic routes
-router.get('/available-slots', getAvailableSlots);
-router.get('/event-types', getEventTypes);
-
 // Admin route
 router.get('/admin/bookings', adminAuth, getAllBookings);
 
