@@ -4,7 +4,7 @@ const Video = require('../models/Video');
 const cloudinary = require('cloudinary').v2;
 const { v4: uuidv4 } = require('uuid');
 const Email = require('../models/Email');
-const transporter = require('../config/email');
+const { sendEmail: sendResendEmail } = require('../services/resendService');
 const path = require('path');
 const streamifier = require('streamifier');
 
@@ -172,19 +172,15 @@ const sendEmail = async (req, res) => {
       sentBy: userid // Use the admin's ID who is sending the email
     });
 
-    // Email options for SMTP
-    const mailOptions = {
-      from: process.env.SMTP_USER,
-      to: to.join(', '), // Join multiple recipients with commas
-      cc: cc.length > 0 ? cc.join(', ') : undefined, // Only add CC if there are CC recipients
-      subject,
-      text: message,
-      attachments
-    };
-
     try {
-      // Send email
-      await transporter.sendMail(mailOptions);
+      // Send email using Resend
+      await sendResendEmail({
+        to,
+        cc,
+        subject,
+        text: message,
+        attachments
+      });
 
       // Save email record to DB
       await emailRecord.save();

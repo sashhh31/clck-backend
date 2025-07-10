@@ -251,3 +251,20 @@ The API uses a consistent error response format:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details. 
+
+## Email Sending (Resend)
+
+This project now uses [Resend](https://resend.com/) for all outgoing emails instead of SMTP/Nodemailer.
+
+### Configuration
+- Set your Resend API key in the environment variable `RESEND_API_KEY`.
+- Set the sender email address in `RESEND_FROM` (e.g., no-reply@yourdomain.com).
+
+Example in your `.env` file:
+
+```
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM=no-reply@yourdomain.com
+```
+
+No SMTP configuration is required anymore. 

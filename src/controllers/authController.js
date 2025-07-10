@@ -1,38 +1,24 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const nodemailer = require('nodemailer');
+const { sendEmail: sendResendEmail } = require('../services/resendService');
 const crypto = require('crypto');
 const path = require('path');
-
-// Create email transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
 
 const generateVerificationCode = () => {
   return crypto.randomInt(100000, 999999).toString();
 };
 
 const sendVerificationEmail = async (email, code) => {
-  const mailOptions = {
-    from: process.env.SMTP_FROM,
+  await sendResendEmail({
     to: email,
     subject: 'Your Verification Code',
     html: `
       <h1>Email Verification</h1>
       <p>Your verification code is: <strong>${code}</strong></p>
       <p>This code will expire in 10 minutes.</p>
-    `,
-  };
-
-  await transporter.sendMail(mailOptions);
+    `
+  });
 };
 
 const generateToken = (userId, role) => {
@@ -55,7 +41,7 @@ const sendPowerhourEmail = async (userEmail) => {
       </div>
     </div>
   `;
-  await transporter.sendMail({
+  await sendResendEmail({
     to: userEmail,
     subject: 'Schedule your Powerhour session',
     html
