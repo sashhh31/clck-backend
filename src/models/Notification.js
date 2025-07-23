@@ -16,12 +16,17 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['meeting', 'system', 'other'],
-    default: 'meeting'
+    enum: ['meeting', 'system', 'other', 'document_add', 'document_delete', 'document_download', 'profile_update', 'new_user'],
+    default: 'system'
   },
   relatedMeeting: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Meeting'
+  },
+  documentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Document',
+    required: false
   }
 }, {
   timestamps: true

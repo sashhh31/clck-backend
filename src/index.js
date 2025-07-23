@@ -14,6 +14,7 @@ const subscriptionRoutes = require('./routes/subscriptions');
 const meetingRoutes = require('./routes/meetingRoutes');
 const userRoutes = require('./routes/users');
 const stripeRoutes = require('./routes/stripe')
+const notificationRoutes = require('./routes/notificationRoutes');
 const app = express();
 
 // Middleware
@@ -50,6 +51,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/stripe',stripeRoutes)
+app.use('/api/notifications', notificationRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

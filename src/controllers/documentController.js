@@ -3,6 +3,7 @@ const Document = require('../models/Document');
 const { v4: uuidv4 } = require('uuid');
 const streamifier = require('streamifier');
 const path = require('path');
+const Notification = require('../models/Notification');
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -60,6 +61,14 @@ const downloadUrl = `https://res.cloudinary.com/${result.cloud_name}/raw/upload/
     });
     
     await document.save();
+
+    // Create notification for document upload
+    await Notification.create({
+      userId,
+      message: `Added new document named "${req.file.originalname}"`,
+      type: 'document_add',
+      documentId: document._id
+    });
     
     res.status(201).json({
       status: 'success',
@@ -112,6 +121,14 @@ const downloadDocument = async (req, res) => {
 
     document.downloaded = true;
     await document.save();
+
+    // Create notification for document download
+    await Notification.create({
+      userId,
+      message: `Downloaded a document named "${document.fileName}"`,
+      type: 'document_download',
+      documentId: document._id
+    });
 
     res.status(200).json({
       status: 'success',
@@ -192,6 +209,14 @@ const deleteDocument = async (req, res) => {
 
     // Delete from database
     await document.deleteOne();
+
+    // Create notification for document deletion
+    await Notification.create({
+      userId,
+      message: `Deleted a document named "${document.fileName}"`,
+      type: 'document_delete',
+      documentId: document._id
+    });
 
     res.status(200).json({
       status: 'success',
