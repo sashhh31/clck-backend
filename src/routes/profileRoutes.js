@@ -8,7 +8,8 @@ const {
   changePassword,
   initiateEmailChange,
   verifyAndChangeEmail,
-  updateProfilePicture
+  updateProfilePicture,
+  toggleTwoFactorAuth
 } = require('../controllers/profileController');
 
 // Configure multer for file upload
@@ -43,5 +44,6 @@ router.put('/change-password', auth, changePassword);
 router.post('/initiate-email-change', auth, initiateEmailChange);
 router.post('/verify-and-change-email', auth, verifyAndChangeEmail);
 router.post('/update-picture', auth, upload.single('profilePicture'), updateProfilePicture);
+router.post('/toggle-2fa', auth, toggleTwoFactorAuth);
 
 module.exports = router; 

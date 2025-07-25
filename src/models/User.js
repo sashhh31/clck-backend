@@ -43,6 +43,19 @@ const userSchema = new mongoose.Schema({
   verificationExpiry: {
     type: Date,
   },
+  // For email change verification
+  pendingNewEmail: {
+    type: String,
+    default: null
+  },
+  emailVerificationCode: {
+    type: String,
+    default: null
+  },
+  emailVerificationExpiry: {
+    type: Date,
+    default: null
+  },
   twoFactorAuth: {
     enabled: {
       type: Boolean,

@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const { sendVerificationCode, verifyCode } = require('../services/twilioService');
+const { sendEmail } = require('../services/resendService');
 
 const updateProfile = async (req, res) => {
   try {
@@ -67,28 +68,32 @@ const changePassword = async (req, res) => {
 const initiateEmailChange = async (req, res) => {
   try {
     const user = req.user;
-    
-    // Send verification code to current phone number
-    const verificationResult = await sendVerificationCode(user.phoneNumber);
-    
-    if (!verificationResult.success) {
-      return res.status(500).json({
-        status: 'error',
-        message: 'Failed to send verification code',
-        details: verificationResult.status
-      });
+    const { newEmail } = req.body;
+    if (!newEmail) {
+      return res.status(400).json({ status: 'error', message: 'New email is required' });
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Verification code sent successfully'
+    // Check if new email is already taken
+    const existingUser = await User.findOne({ email: newEmail });
+    if (existingUser) {
+      return res.status(400).json({ status: 'error', message: 'Email already in use' });
+    }
+    // Generate a 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    user.pendingNewEmail = newEmail;
+    user.emailVerificationCode = code;
+    user.emailVerificationExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
+    await user.save();
+    // Send code to new email
+    await sendEmail({
+      to: newEmail,
+      subject: 'Your Email Change Verification Code',
+      text: `Your verification code is: ${code}`,
+      html: `<p>Your verification code is: <b>${code}</b></p>`
     });
+    res.status(200).json({ status: 'success', message: 'Verification code sent to new email' });
   } catch (error) {
     console.error('Email change initiation error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Error initiating email change'
-    });
+    res.status(500).json({ status: 'error', message: 'Error initiating email change' });
   }
 };
 
@@ -96,30 +101,22 @@ const verifyAndChangeEmail = async (req, res) => {
   try {
     const { newEmail, verificationCode } = req.body;
     const user = req.user;
-
-    // Verify the code using Twilio Verify
-    const verificationResult = await verifyCode(user.phoneNumber, verificationCode);
-    
-    if (!verificationResult.success) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Invalid or expired verification code'
-      });
+    // Check code and expiry
+    if (
+      !user.pendingNewEmail ||
+      user.pendingNewEmail !== newEmail ||
+      user.emailVerificationCode !== verificationCode ||
+      !user.emailVerificationExpiry ||
+      user.emailVerificationExpiry < new Date()
+    ) {
+      return res.status(401).json({ status: 'error', message: 'Invalid or expired verification code' });
     }
-
-    // Check if new email is already taken
-    const existingUser = await User.findOne({ email: newEmail });
-    if (existingUser) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Email already in use'
-      });
-    }
-
     // Update email
     user.email = newEmail;
+    user.pendingNewEmail = null;
+    user.emailVerificationCode = null;
+    user.emailVerificationExpiry = null;
     await user.save();
-
     res.status(200).json({
       status: 'success',
       message: 'Email updated successfully',
@@ -135,10 +132,7 @@ const verifyAndChangeEmail = async (req, res) => {
     });
   } catch (error) {
     console.error('Email change error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Error changing email'
-    });
+    res.status(500).json({ status: 'error', message: 'Error changing email' });
   }
 };
 
@@ -171,10 +165,31 @@ const updateProfilePicture = async (req, res) => {
   }
 };
 
+const toggleTwoFactorAuth = async (req, res) => {
+  try {
+    const { enable } = req.body;
+    const user = req.user;
+    user.twoFactorAuth.enabled = !!enable;
+    await user.save();
+    res.status(200).json({
+      status: 'success',
+      message: enable ? 'Two-factor authentication enabled' : 'Two-factor authentication disabled',
+      data: { enabled: user.twoFactorAuth.enabled }
+    });
+  } catch (error) {
+    console.error('2FA toggle error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error toggling two-factor authentication'
+    });
+  }
+};
+
 module.exports = {
   updateProfile,
   changePassword,
   initiateEmailChange,
   verifyAndChangeEmail,
-  updateProfilePicture
+  updateProfilePicture,
+  toggleTwoFactorAuth
 }; 
