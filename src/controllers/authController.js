@@ -28,7 +28,7 @@ const generateToken = (userId, role) => {
 };
 
 const sendPowerhourEmail = async (userEmail) => {
-  const calendlyLink = 'https://calendly.com/saswatpattanaik31/power-hour';
+  const calendlyLink = 'https://calendly.com/contact-clck-tax/30min';
   const logoUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/Images/logo.png`;
   const html = `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; padding: 40px 0;">
