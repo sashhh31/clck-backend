@@ -92,18 +92,37 @@ const getSubscriptionStatus = async (req, res) => {
     if (!user.subscription.stripeCustomerId) {
       return res.status(200).json({
         status: 'success',
-        data: {
-          subscription: null
-        }
+        data: { subscription: null }
       });
     }
-    res.status(200).json({
+
+    // Fetch subscriptions from Stripe
+    const subscriptions = await stripe.subscriptions.list({
+      customer: user.subscription.stripeCustomerId,
+      status: 'all',
+      limit: 1
+    });
+
+    if (!subscriptions.data.length) {
+      return res.status(200).json({
+        status: 'success',
+        data: { subscription: null }
+      });
+    }
+
+    const sub = subscriptions.data[0];
+    const price = sub.items.data[0].price;
+    return res.status(200).json({
       status: 'success',
       data: {
         subscription: {
-          plan: user.subscription.plan,
-          status: user.subscription.status,
-          currentPeriodEnd: user.subscription.currentPeriodEnd
+          plan: price.nickname || price.id,
+          status: sub.status,
+          currentPeriodEnd: new Date(sub.current_period_end * 1000),
+          amount: price.unit_amount ? price.unit_amount / 100 : null,
+          currency: price.currency,
+          interval: price.recurring ? price.recurring.interval : null,
+          stripeSubscriptionId: sub.id
         }
       }
     });

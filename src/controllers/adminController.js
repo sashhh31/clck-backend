@@ -313,8 +313,8 @@ const getAllDownloadedDocuments = async (req, res) => {
           downloaded: doc.downloaded,
           createdAt: doc.createdAt,
           downloadedBy: {
-            name: doc.userId.email.split('@')[0],
-            email: doc.userId.email
+            name: doc.userId && doc.userId.email ? doc.userId.email.split('@')[0] : 'Unknown',
+            email: doc.userId && doc.userId.email ? doc.userId.email : 'Unknown'
           }
         })),
         pagination: {
@@ -377,13 +377,19 @@ const getAllDocuments = async (req, res) => {
           url: doc.cloudinaryUrl,
           downloaded: doc.downloaded,
           createdAt: doc.createdAt,
-          uploadedBy: {
+          uploadedBy: doc.uploadedBy && doc.uploadedBy.email ? {
             name: doc.uploadedBy.email.split('@')[0],
             email: doc.uploadedBy.email
+          } : {
+            name: 'Unknown',
+            email: 'Unknown'
           },
-          owner: {
+          owner: doc.userId && doc.userId.email ? {
             name: doc.userId.email.split('@')[0],
             email: doc.userId.email
+          } : {
+            name: 'Unknown',
+            email: 'Unknown'
           }
         })),
         pagination: {
@@ -488,12 +494,27 @@ const getDashboardStats = async (req, res) => {
       monthly: [16, 28, 10, 20, 16, 12, 18]
     };
 
+    // Calculate new users per month for the last 7 months
+    const now = new Date();
+    const months = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ year: d.getFullYear(), month: d.getMonth() });
+    }
+    const newUsersMonthly = months.map(({ year, month }) =>
+      users.filter(user => {
+        const created = new Date(user.createdAt);
+        return created.getFullYear() === year && created.getMonth() === month;
+      }).length
+    );
+
     res.status(200).json({
       status: 'success',
       data: {
         stats,
         subscriptionStats,
-        earnings
+        earnings,
+        newUsersMonthly
       }
     });
   } catch (error) {
